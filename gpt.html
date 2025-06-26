@@ -172,8 +172,33 @@
   </style>
 </head>
 <body>
+  <!-- 密碼保護覆蓋層 -->
+<div id="pw-lock"
+style="position:fixed;z-index:9999;inset:0;display:flex;align-items:center;justify-content:center;background:#15161a;">
+<form id="pw-form" style="background:#232336;padding:32px 30px 22px 30px;border-radius:14px;box-shadow:0 2px 24px #000a;display:flex;flex-direction:column;gap:18px;">
+<div style="color:#e1e2e6;font-size:18px;letter-spacing:2px;text-align:center;">請輸入存取密碼</div>
+<input type="password" id="pw-input" placeholder="Password" style="padding:12px;font-size:18px;border-radius:9px;border:1px solid #353657;background:#191a1e;color:#fff;" autocomplete="current-password" autofocus>
+<button type="submit" style="padding:10px;font-size:16px;border-radius:8px;background:#0f5e49;color:#d1ffe9;font-weight:bold;cursor:pointer;">解鎖</button>
+<div id="pw-msg" style="color:#ff8989;height:18px;font-size:15px;text-align:center;"></div>
+</form>
+</div>
+<script>
+const PASSWORD = "2211"; // <<== 請自訂密碼
+document.getElementById('pw-form').onsubmit = e => {
+e.preventDefault();
+const v = document.getElementById('pw-input').value;
+if (v === PASSWORD) {
+document.getElementById('pw-lock').style.display = "none";
+document.body.style.overflow = "auto";
+} else {
+document.getElementById('pw-msg').innerText = "密碼錯誤！";
+document.getElementById('pw-input').value = "";
+}
+};
+document.body.style.overflow = "hidden";
+</script>
   <div class="center-container" id="center-container">
-    <div class="title" id="main-title">你今天在想什麼？</div>
+    <div class="title" id="main-title">你今天好嗎？</div>
     <div class="form-wrap" id="init-form">
       <form id="chat-form" autocomplete="off">
         <select id="model-selector">
@@ -182,7 +207,7 @@
           <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
           <option value="gemini-2.5-flash-lite-preview-06-17">Gemini 2.5 Flash Lite</option>
         </select>
-        <input type="text" id="message-input" placeholder="請問任何問題" required />
+        <input type="text" id="message-input" placeholder="問任何問題" required />
         <button type="submit" id="submit-button">➤</button>
       </form>
     </div>
@@ -290,7 +315,7 @@
       const url = `${PROXY_BASE}/gemini/${selectedModel}`;
       const body = {
         systemInstruction: {
-          parts: [{ text: '你是一個助理，所有回覆一律使用繁體中文。' }]
+          parts: [{ text: '所有回覆一律使用繁體中文。' }]
         },
         contents: history.map(msg => ({
           role: msg.role === 'assistant' ? 'model' : 'user',
