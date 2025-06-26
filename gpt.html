@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat UI</title>
+  <style>
+    :root {
+      --bg: #101014;
+      --msg-user: #0f5e49;
+      --msg-ai: #232336;
+      --msg-user-text: #d1ffe9;
+      --msg-ai-text: #e1e2e6;
+      --border: #232336;
+      --accent: #007bff;
+      --container-width: 520px;
+      --container-padding: 20px;
+    }
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: #fff;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      margin: 0; padding: 0;
+    }
+    .center-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: min-height 0.3s;
+    }
+    .title {
+      font-size: 28px;
+      text-align: center;
+      margin-bottom: 28px;
+      color: #fff;
+      font-weight: bold;
+      letter-spacing: 2px;
+      transition: opacity .4s;
+    }
+    .fade { opacity: 0; pointer-events: none; }
+    .chat-section {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin: 0 auto;
+      transition: margin 0.2s;
+    }
+    .chat-section.active {
+      display: flex;
+      margin-top: 22px;
+      min-height: 56vh;
+    }
+    #messages {
+      width: 100%;
+      max-width: var(--container-width);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 40vh;
+      margin-bottom: 90px;
+      box-sizing: border-box;
+      padding-left: var(--container-padding);
+      padding-right: var(--container-padding);
+    }
+    .msg {
+      max-width: 100%;
+      padding: 15px 18px;
+      border-radius: 18px;
+      font-size: 17px;
+      line-height: 1.7;
+      word-break: break-word;
+      white-space: pre-wrap;
+      box-shadow: 0 1px 7px 0 #0002;
+      transition: background 0.2s;
+    }
+    .msg.user {
+      background: var(--msg-user);
+      color: var(--msg-user-text);
+      align-self: flex-end;
+      border-bottom-right-radius: 6px;
+      border-bottom-left-radius: 18px;
+    }
+    .msg.ai {
+      background: var(--msg-ai);
+      color: var(--msg-ai-text);
+      align-self: flex-start;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 18px;
+    }
+    .form-wrap {
+      width: 100%;
+      max-width: var(--container-width);
+      margin: 0 auto;
+      position: relative;
+      background: none;
+      z-index: 10;
+      padding-left: var(--container-padding);
+      padding-right: var(--container-padding);
+      box-sizing: border-box;
+    }
+    #chat-form {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      margin: 0 auto;
+      background: none;
+      padding: 0;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #model-selector {
+      background: var(--msg-ai);
+      color: var(--msg-ai-text);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 7px 12px;
+      font-size: 16px;
+      outline: none;
+      min-width: 110px;
+    }
+    #message-input {
+      flex: 1;
+      background: var(--msg-ai);
+      color: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      font-size: 16px;
+      padding: 11px 14px;
+      outline: none;
+      min-width: 0;
+    }
+    #submit-button {
+      background: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      transition: background .1s;
+    }
+    #submit-button:disabled { opacity: 0.65; cursor: not-allowed; }
+    .chat-mode .form-wrap {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: 30px;
+      background: var(--bg);
+      box-shadow: 0 -2px 12px 0 #0002;
+      padding: 12px 0 18px 0;
+      max-width: none;
+      display: flex;
+      justify-content: center;
+    }
+    .chat-mode .center-container {
+      min-height: 0;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+    @media (max-width: 600px) {
+      #messages, .form-wrap { max-width: 100vw; padding-left: 6vw; padding-right: 6vw;}
+      .msg { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="center-container" id="center-container">
+    <div class="title" id="main-title">你今天在想什麼？</div>
+    <div class="form-wrap" id="init-form">
+      <form id="chat-form" autocomplete="off">
+        <select id="model-selector">
+          <option value="gpt-4o">GPT-4o</option>
+          <option value="gpt-4o-mini">GPT-4o-mini</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-2.5-flash-lite-preview-06-17">Gemini 2.5 Flash Lite</option>
+        </select>
+        <input type="text" id="message-input" placeholder="請問任何問題" required />
+        <button type="submit" id="submit-button">➤</button>
+      </form>
+    </div>
+    <div class="chat-section" id="chat-section">
+      <div id="messages"></div>
+    </div>
+  </div>
+  <script>
+    const PROXY_BASE = "https://gpt-proxy.joshuawang.workers.dev";
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const modelSelector = document.getElementById('model-selector');
+    const submitButton = document.getElementById('submit-button');
+    const messagesDiv = document.getElementById('messages');
+    const mainTitle = document.getElementById('main-title');
+    const centerContainer = document.getElementById('center-container');
+    const chatSection = document.getElementById('chat-section');
+    const initForm = document.getElementById('init-form');
+    const conversationHistory = [];
+
+    // 渲染訊息
+    function renderMessages() {
+      messagesDiv.innerHTML = '';
+      for (const m of conversationHistory) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (m.role === 'user' ? 'user' : 'ai');
+        div.textContent = m.content;
+        messagesDiv.appendChild(div);
+      }
+      // 自動捲到底
+      messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: 'smooth' });
+    }
+
+    // 切換到對話模式 UI
+    function switchToChatMode() {
+      document.body.classList.add('chat-mode');
+      chatSection.classList.add('active');
+      mainTitle.classList.add('fade');
+      setTimeout(()=>mainTitle.style.display='none', 400);
+    }
+
+    async function sendUserMessage(userMessage, model) {
+      if (!chatSection.classList.contains('active')) {
+        switchToChatMode();
+      }
+      conversationHistory.push({ role: 'user', content: userMessage });
+      renderMessages();
+      conversationHistory.push({ role: 'assistant', content: '思考中...' });
+      renderMessages();
+      try {
+        let aiResponse;
+        if (model.startsWith('gpt')) {
+          aiResponse = await callOpenAI([...conversationHistory.slice(0, -1)], model);
+        } else if (model.startsWith('gemini')) {
+          aiResponse = await callGemini([...conversationHistory.slice(0, -1)], model);
+        } else {
+          aiResponse = '不支援的模型';
+        }
+        conversationHistory[conversationHistory.length - 1].content = aiResponse.trim();
+      } catch (error) {
+        conversationHistory[conversationHistory.length - 1].content = "發生錯誤：" + (error.message || error.toString());
+      }
+      renderMessages();
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userMessage = messageInput.value.trim();
+      if (!userMessage) return;
+      const model = modelSelector.value;
+      messageInput.value = '';
+      setFormDisabled(true);
+      await sendUserMessage(userMessage, model);
+      setFormDisabled(false);
+      messageInput.focus();
+    });
+
+    function setFormDisabled(disabled) {
+      messageInput.disabled = disabled;
+      modelSelector.disabled = disabled;
+      submitButton.disabled = disabled;
+    }
+
+    async function callOpenAI(history, selectedModel) {
+      const res = await fetch(`${PROXY_BASE}/openai/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: [
+            { role: 'system', content: '你是一個助理，所有回覆一律使用繁體中文。' },
+            ...history
+          ]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`OpenAI API 錯誤: ${err.error?.message || res.statusText}`);
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+
+    async function callGemini(history, selectedModel) {
+      const url = `${PROXY_BASE}/gemini/${selectedModel}`;
+      const body = {
+        systemInstruction: {
+          parts: [{ text: '你是一個助理，所有回覆一律使用繁體中文。' }]
+        },
+        contents: history.map(msg => ({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        }))
+      };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || res.statusText);
+      }
+      const json = await res.json();
+      return json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+  </script>
+</body>
+</html>
